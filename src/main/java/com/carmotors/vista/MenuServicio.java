@@ -17,6 +17,7 @@ public class MenuServicio {
 
     private final ServicioControlador servicioControlador;
     private final Scanner scanner;
+    private final OrdenServicio ordenServicio;
 
     public MenuServicio(ServicioControlador servicioControlador) {
         this(servicioControlador, new Scanner(System.in));
@@ -25,6 +26,7 @@ public class MenuServicio {
     public MenuServicio(ServicioControlador servicioControlador, Scanner scanner) {
         this.servicioControlador = servicioControlador;
         this.scanner = scanner;
+        this.ordenServicio = new OrdenServicio(servicioControlador, scanner);
     }
 
     public void mostrarMenu() {
@@ -308,26 +310,6 @@ public class MenuServicio {
     }
 
     private void ejecutarExportarOrdenServicio() {
-        System.out.println("\n--- EXPORTAR ORDEN DE SERVICIO ---");
-        System.out.print("Ingrese el ID del servicio que desea exportar: ");
-        String entrada = scanner.nextLine().trim();
-
-        int servicioId;
-        try {
-            servicioId = Integer.parseInt(entrada);
-        } catch (NumberFormatException e) {
-            System.out.println("[Error] El ID del servicio debe ser un número entero válido.");
-            return;
-        }
-
-        try {
-            String nombreArchivo = servicioControlador.exportarOrdenServicio(servicioId);
-            System.out.println("[Éxito] Orden de servicio exportada correctamente.");
-            System.out.println("Archivo generado: " + nombreArchivo);
-        } catch (IllegalArgumentException e) {
-            System.out.println("[Aviso] " + e.getMessage());
-        } catch (RuntimeException e) {
-            System.out.println("[Error] " + e.getMessage());
-        }
+        ordenServicio.exportarOrden();
     }
 }

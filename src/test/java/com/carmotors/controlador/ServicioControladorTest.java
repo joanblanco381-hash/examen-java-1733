@@ -1,8 +1,10 @@
 package com.carmotors.controlador;
 
 import com.carmotors.dao.ServicioDao;
+import com.carmotors.modelo.Cliente;
 import com.carmotors.modelo.Servicio;
 import com.carmotors.modelo.ServicioRepuesto;
+import com.carmotors.modelo.Vehiculo;
 import com.carmotors.servicio.InventarioServiceContract;
 import com.carmotors.servicio.TallerServicio;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -106,5 +110,46 @@ class ServicioControladorTest {
 
         assertEquals(70.0, servicioControlador.obtenerSubtotalRepuestos(servicioId), 0.001);
         assertEquals(150.0, servicioControlador.obtenerCostoTotal(servicioId), 0.001);
+    }
+
+    @Test
+    @DisplayName("Controlador exporta orden de servicio existente y retorna nombre del archivo")
+    void testExportarOrdenServicioExito() throws Exception {
+        int servicioId = 15;
+        Servicio orden = new Servicio(
+                servicioId, 1, 1, LocalDateTime.of(2026, 11, 25, 10, 0),
+                null, "Cambio de aceite", 50000.0, Servicio.ESTADO_EN_PROCESO
+        );
+        orden.setCliente(new Cliente(1, "Ana Gómez", "987654321", "3001234567", "ana@mail.com"));
+        orden.setVehiculo(new Vehiculo(1, 1, "XYZ789", "Mazda", "3", 2022, 20000, true));
+
+        ServicioRepuesto repuesto = new ServicioRepuesto(servicioId, 3, 1, 35000.0);
+        repuesto.setNombreRepuesto("Filtro de aceite");
+        orden.setRepuestos(List.of(repuesto));
+
+        when(servicioDao.buscarOrdenDetalladaPorId(servicioId)).thenReturn(orden);
+
+        String archivo = servicioControlador.exportarOrdenServicio(servicioId);
+        assertEquals("orden_servicio_15.txt", archivo);
+
+        Path path = Path.of(archivo);
+        try {
+            assertTrue(Files.exists(path));
+        } finally {
+            Files.deleteIfExists(path);
+        }
+    }
+
+    @Test
+    @DisplayName("Controlador propaga aviso cuando el ID de la orden a exportar no existe")
+    void testExportarOrdenServicioNoExiste() {
+        when(servicioDao.buscarOrdenDetalladaPorId(999)).thenReturn(null);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> servicioControlador.exportarOrdenServicio(999)
+        );
+
+        assertTrue(ex.getMessage().contains("999"));
     }
 }
